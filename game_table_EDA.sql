@@ -75,18 +75,51 @@ game_id nvarchar(50),
 season_id nvarchar(50),
 team_id nvarchar(50),
 team nvarchar(50),
+team_full_name nvarchar(50),
 matchup_home nvarchar(50),
 game_date date,
 fg3_a float,
 fg3_pct float,
+pts float,
+fg_pct float,
+wl nvarchar(50),
 fta float,
 season_type nvarchar(50));
 
 insert into per_team_game_analy
-select CONCAT(game_id,team_id_home) as game_team_id, game_id, season_id, team_id_home as team_id,team_abbreviation_home as team, matchup_home, game_date, fg3a_home as fg3_a, fg3_pct_home as fg3_pct, fta_home as fta, season_type 
+select 
+CONCAT(game_id,team_id_home) as game_team_id, 
+game_id, 
+season_id, 
+team_id_home as team_id,
+team_abbreviation_home as team, 
+team_name_home as team_full_name, 
+matchup_home, 
+game_date, 
+fg3a_home as fg3_a, 
+fg3_pct_home as fg3_pct, 
+pts_home as pts,
+fg_pct_home as fg_pct,
+wl_home  as wl,
+fta_home as fta, 
+season_type 
 from Project_NBA.dbo.game 
 UNION ALL 
-select CONCAT(game_id,team_id_away) as game_team_id ,game_id, season_id, team_id_away as team_id, team_abbreviation_away as team, matchup_home, game_date, fg3a_away as fg3_a, fg3_pct_away as fg3_pct, fta_away as fta, season_type 
+select CONCAT(game_id,team_id_away) as game_team_id ,
+game_id, 
+season_id, 
+team_id_away as team_id, 
+team_abbreviation_away as team,
+team_name_away as team_full_name,
+matchup_home, 
+game_date, 
+fg3a_away as fg3_a, 
+fg3_pct_away as fg3_pct,
+pts_away as pts,
+fg_pct_away as fg_pct,
+wl_away  as wl,
+fta_away as fta, 
+season_type 
 from Project_NBA.dbo.game;
 
 select * 
@@ -160,15 +193,11 @@ order by game_date
 
 
 
-
-
-
-
 --- playoff-diff-intense ------  
 drop view if exists analy_playoff_intense
 go
 create view analy_playoff_intense  as
-select g.season_id, g.game_id, matchup_home, game_date, fga_home, fga_away, fg_pct_home, fg_pct_away, pts_home, pts_away, lead_changes, times_tied, season_type
+select g.season_id, g.game_id, g.team_id_home, g.team_id_away, g.team_name_home, g.team_name_away,os.team_city_home, os.team_city_away,  matchup_home as matchup, game_date, fg_pct_home, fg_pct_away, pts_home, pts_away, season_type
 from Project_NBA.dbo.game g
 LEFT JOIN Project_NBA.dbo.other_stats os
 on g.game_id = os.game_id
@@ -184,8 +213,24 @@ create view players_info as
 select person_id, display_first_last, country, (cast(LEFT(height,1) as float) * 12 + cast(right(height,len(height)-2) as float)) * 2.54 as height_in_cm, weight,
 season_exp, rosterstatus, draft_year
 from dbo.common_player_info
-where draft_year != 'Undrafted'
-
+where draft_year != 'Undrafted';
+go
 select* from players_info
 
 
+--------  Home vs away -------------------
+
+drop view if exists home_away
+go
+create view home_away as
+select a.game_team_id, a.game_id, a.team_id, a.team, a.team_full_name, a.matchup_home, a.game_date, a.wl, a.pts, a.fg_pct,
+CASE WHEN  a.team =	LEFT(a.matchup_home,3)
+then 'Home'
+else 'Away' end as 'Hometeam?'-- create column: Home?: if "team" = letter before "matchup_home" => Home =1, else Home = 0
+from dbo.per_team_game_analy a  
+
+GO
+
+select *, ROW_NUMBER()  Over(Partition by game_id Order by game_id)
+from home_away
+order by game_id Asc 
