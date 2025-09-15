@@ -1,7 +1,7 @@
 # NBA_Analysis Projec
 A project to answer interesting questions in the NBA from the NBA Database by Wyatt Walsh (https://www.kaggle.com/datasets/wyattowalsh/basketball****):
 
-## Obejective:
+## Objective:
 1. Is the trend towards 3-pt scoring rising? What does the Role of Stepth Curry Has to do with it?
 2. Is the game/refree getting more 'foul sensitive'/'soft' 
 
